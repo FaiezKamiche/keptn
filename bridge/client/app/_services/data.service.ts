@@ -50,6 +50,7 @@ export class DataService {
     this.apiService.getProjects()
       .pipe(
         debounce(() => timer(10000)),
+        map(result => result.projects),
         mergeMap(projects =>
           from(projects).pipe(
             mergeMap((project) =>
@@ -57,6 +58,7 @@ export class DataService {
                 mergeMap(
                   stage => this.apiService.getServices(project.projectName, stage.stageName)
                     .pipe(
+                      map(result => result.services),
                       map(services => services.map(service => Service.fromJSON(service))),
                       map(services => ({ ...stage, services}))
                     )
@@ -92,6 +94,7 @@ export class DataService {
           this._rootsLastUpdated[project.projectName+":"+service.serviceName] = new Date(response.headers.get("date"));
           return response.body;
         }),
+        map(result => result.events||[]),
         mergeMap((roots) =>
           from(roots).pipe(
             mergeMap(
@@ -105,6 +108,7 @@ export class DataService {
                       this._tracesLastUpdated[root.shkeptncontext] = new Date(response.headers.get("date"));
                       return response.body;
                     }),
+                    map(result => result.events||[]),
                     map(traces => traces.map(trace => Trace.fromJSON(trace))),
                     map(traces => ({ ...root, traces}))
                   )
@@ -131,6 +135,7 @@ export class DataService {
           this._tracesLastUpdated[root.shkeptncontext] = new Date(response.headers.get("date"));
           return response.body;
         }),
+        map(result => result.events||[]),
         map(traces => traces.map(trace => Trace.fromJSON(trace)))
       )
       .subscribe((traces: Trace[]) => {
@@ -144,7 +149,10 @@ export class DataService {
       fromTime = new Date(event.data.evaluationHistory[event.data.evaluationHistory.length-1].time);
 
     this.apiService.getEvaluationResults(event.data.project, event.data.service, event.data.stage, event.source, fromTime ? fromTime.toISOString() : null)
-      .pipe(map(traces => traces.map(trace => Trace.fromJSON(trace))))
+      .pipe(
+        map(result => result.events||[]),
+        map(traces => traces.map(trace => Trace.fromJSON(trace)))
+      )
       .subscribe((traces: Trace[]) => {
         event.data.evaluationHistory = [...traces||[], ...event.data.evaluationHistory||[]].sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
         this._evaluationResults.next(event);

@@ -4,7 +4,7 @@ const axios = require('axios');
 const router = express.Router();
 
 module.exports = (params) => {
-  const { apiUrl } = params;
+  const { apiUrl, apiToken } = params;
 
   router.get('/', async (req, res, next) => {
     try {
@@ -22,7 +22,11 @@ module.exports = (params) => {
       let method = req.method;
       let url = `${apiUrl}${req.url}`;
       let data = req.params;
-      const result = await axios({ method, url, data });
+      let headers = {
+        'x-token': apiToken,
+        'content-type': 'application/json'
+      };
+      const result = await axios({ method, url, data, headers });
       return res.json(result);
     } catch (err) {
       return next(err);

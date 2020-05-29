@@ -110,6 +110,7 @@ export class DataService {
                     }),
                     map(result => result.events||[]),
                     map(traces => traces.map(trace => Trace.fromJSON(trace))),
+                    map(traces => traces.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime())),
                     map(traces => ({ ...root, traces}))
                   )
               }

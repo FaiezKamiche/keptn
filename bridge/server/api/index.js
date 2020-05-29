@@ -5,13 +5,11 @@ const router = express.Router();
 
 module.exports = (params) => {
   const { apiUrl, apiToken } = params;
+  const version = process.env.VERSION;
 
   router.get('/', async (req, res, next) => {
     try {
-      return res.json({
-        version: process.env.VERSION,
-        apiUrl: process.env.API_URL
-      });
+      return res.json({ version, apiUrl });
     } catch (err) {
       return next(err);
     }
@@ -19,14 +17,15 @@ module.exports = (params) => {
 
   router.all('*', async (req, res, next) => {
     try {
-      let method = req.method;
-      let url = `${apiUrl}${req.url}`;
-      let data = req.params;
-      let headers = {
-        'x-token': apiToken,
-        'content-type': 'application/json'
-      };
-      const result = await axios({ method, url, data, headers });
+      const result = await axios({
+        method: req.method,
+        url: `${apiUrl}${req.url}`,
+        data: req.params,
+        headers: {
+          'x-token': apiToken,
+          'content-type': 'application/json'
+        }
+      });
       return res.json(result.data);
     } catch (err) {
       return next(err);
